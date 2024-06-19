@@ -1,0 +1,92 @@
+# If you need more help, visit the Docker compose reference guide at https://docs.docker.com/compose/compose-file/
+# For examples, see the Awesome Compose repository: https://github.com/docker/awesome-compose
+services:
+  admin-portal:
+    build:
+      context: .
+      dockerfile: Dockerfile.AdminPortal
+    restart: always
+    ports:
+      - ${ADMIN_PORTAL_PORT}:8080
+    volumes:
+      - ./data-protection-keys:/data-protection-keys
+      - ./uploads:/app/wwwroot/uploads
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - AdminPortalDataProtectionKeysPath=/data-protection-keys/admin-portal
+      - QuoteImagesPath=/app/wwwroot/uploads
+    secrets:
+      - vehicle-quotes-db-connection-string
+    entrypoint: [
+      "sh", "-c",
+      "export ConnectionStrings__VehicleQuotesContext=$(cat /run/secrets/vehicle-quotes-db-connection-string) &&
+      dotnet VehicleQuotes.AdminPortal.dll"
+    ]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.WebApi
+    restart: always
+    ports:
+      - ${WEB_API_PORT}:8080
+    volumes:
+      - ./data-protection-keys:/data-protection-keys
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - WebApiDataProtectionKeysPath=/data-protection-keys/web-api
+      - MailSettings__Server=${MAIL_SETTINGS_SERVER}
+      - MailSettings__Port=${MAIL_SETTINGS_PORT}
+      - MailSettings__SenderName=${MAIL_SETTINGS_SENDER_NAME}
+      - MailSettings__SenderEmail=${MAIL_SETTINGS_SENDER_EMAIL}
+      - MailSettings__UserName=${MAIL_SETTINGS_USER_NAME}
+      - MailSettings__Password=${MAIL_SETTINGS_PASSWORD}
+    secrets:
+      - vehicle-quotes-db-connection-string
+    entrypoint: [
+      "sh", "-c",
+      "export ConnectionStrings__VehicleQuotesContext=$(cat /run/secrets/vehicle-quotes-db-connection-string) &&
+      dotnet VehicleQuotes.WebApi.dll"
+    ]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15.7-bookworm
+    restart: always
+    ports:
+      - ${DB_PORT}:5432
+    volumes:
+      - db-postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=vehicle_quotes
+      - POSTGRES_USER=vehicle_quotes
+      - POSTGRES_PASSWORD_FILE=/run/secrets/vehicle-quotes-db-password
+    secrets:
+      - vehicle-quotes-db-password
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  maintenance:
+    build:
+      context: .
+      dockerfile: Dockerfile.Maintenance
+    secrets:
+      - vehicle-quotes-db-connection-string
+    command: sleep infinity
+
+volumes:
+  db-postgres-data:
+
+secrets:
+  vehicle-quotes-db-password:
+    file: ./secrets/vehicle-quotes-db-password.txt
+  vehicle-quotes-db-connection-string:
+    file: ./secrets/vehicle-quotes-db-connection-string.txt

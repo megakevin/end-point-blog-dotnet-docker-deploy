@@ -1,0 +1,34 @@
+# https://hub.docker.com/_/microsoft-dotnet
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+WORKDIR /source
+
+# copy sln and csproj files and restore
+COPY source/vehicle-quotes.sln .
+COPY source/VehicleQuotes.AdminPortal/VehicleQuotes.AdminPortal.csproj ./VehicleQuotes.AdminPortal/
+COPY source/VehicleQuotes.Core/VehicleQuotes.Core.csproj ./VehicleQuotes.Core/
+COPY source/VehicleQuotes.CreateUser/VehicleQuotes.CreateUser.csproj ./VehicleQuotes.CreateUser/
+COPY source/VehicleQuotes.IntegrationTests/VehicleQuotes.IntegrationTests.csproj ./VehicleQuotes.IntegrationTests/
+COPY source/VehicleQuotes.RazorTemplates/VehicleQuotes.RazorTemplates.csproj ./VehicleQuotes.RazorTemplates/
+COPY source/VehicleQuotes.UnitTests/VehicleQuotes.UnitTests.csproj ./VehicleQuotes.UnitTests/
+COPY source/VehicleQuotes.WebApi/VehicleQuotes.WebApi.csproj ./VehicleQuotes.WebApi/
+RUN dotnet restore
+
+# copy everything else
+COPY source/VehicleQuotes.AdminPortal/. ./VehicleQuotes.AdminPortal/
+COPY source/VehicleQuotes.Core/. ./VehicleQuotes.Core/
+COPY source/VehicleQuotes.CreateUser/. ./VehicleQuotes.CreateUser/
+COPY source/VehicleQuotes.IntegrationTests/. ./VehicleQuotes.IntegrationTests/
+COPY source/VehicleQuotes.RazorTemplates/. ./VehicleQuotes.RazorTemplates/
+COPY source/VehicleQuotes.UnitTests/. ./VehicleQuotes.UnitTests/
+COPY source/VehicleQuotes.WebApi/. ./VehicleQuotes.WebApi/
+
+# build app
+WORKDIR /source/VehicleQuotes.AdminPortal
+RUN dotnet publish -c release -o /app --no-restore
+
+# final stage/image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=build /app ./
+ENTRYPOINT ["dotnet", "VehicleQuotes.AdminPortal.dll"]
