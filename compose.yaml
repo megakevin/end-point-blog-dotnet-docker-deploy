@@ -63,13 +63,13 @@ services:
     volumes:
       - db-postgres-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=vehicle_quotes
-      - POSTGRES_USER=vehicle_quotes
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD_FILE=/run/secrets/vehicle-quotes-db-password
     secrets:
       - vehicle-quotes-db-password
     healthcheck:
-      test: [ "CMD", "pg_isready" ]
+      test: "pg_isready -U ${POSTGRES_USER}"
       interval: 10s
       timeout: 5s
       retries: 5
