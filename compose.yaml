@@ -9,7 +9,7 @@ services:
     ports:
       - ${ADMIN_PORTAL_PORT}:8080
     volumes:
-      - ./data-protection-keys:/data-protection-keys
+      - ./data-protection-keys/admin-portal:/data-protection-keys/admin-portal
       - ./uploads:/app/wwwroot/uploads
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
@@ -34,7 +34,7 @@ services:
     ports:
       - ${WEB_API_PORT}:8080
     volumes:
-      - ./data-protection-keys:/data-protection-keys
+      - ./data-protection-keys/web-api:/data-protection-keys/web-api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - WebApiDataProtectionKeysPath=/data-protection-keys/web-api
