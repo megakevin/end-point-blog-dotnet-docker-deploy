@@ -92,6 +92,7 @@ services:
       dockerfile: Dockerfile.Maintenance
     secrets:
       - vehicle-quotes-db-connection-string
+    init: true
     command: sleep infinity
 
 volumes:
