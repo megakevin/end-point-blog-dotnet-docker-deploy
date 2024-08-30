@@ -56,7 +56,7 @@ services:
         condition: service_healthy
 
   db:
-    image: postgres:16.3-bookworm
+    image: postgres:16.4-bookworm
     restart: always
     ports:
       - ${DB_PORT}:5432
